@@ -2,6 +2,17 @@
 
 Low-level design of a music streaming service that addresses the common interview pitfalls (thread-unsafe singleton player, fake streaming, missing licenses, plaintext auth, etc.).
 
+## Features Required
+
+- **User Authentication and Registration:** Users should be able to create accounts, log in, and manage their profiles.
+- **Music Catalog:** The service should have a catalog of songs, albums, artists, and playlists that users can browse and search.
+- **Music Streaming:** Users should be able to stream music and listen to songs, albums, playlists, and personalized recommendations.
+- **Personalized Recommendations:** The service should provide personalized recommendations based on user preferences, listening history, and user interactions.
+- **Playlist Management:** Users should be able to create, modify, and manage their own playlists.
+- **Social Features:** Users should be able to follow other users, view their public playlists, and share music with friends.
+- **Offline Mode:** Users should have the option to download songs and listen to them offline.
+- **Music Licensing:** The service should comply with music licensing regulations and obtain necessary licenses to stream music legally.
+
 ## Package structure
 
 ```
