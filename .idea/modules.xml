@@ -2,6 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/AmazonEcommerce/AmazonEcommerce.iml" filepath="$PROJECT_DIR$/AmazonEcommerce/AmazonEcommerce.iml" />
       <module fileurl="file://$PROJECT_DIR$/LLD.iml" filepath="$PROJECT_DIR$/LLD.iml" />
     </modules>
   </component>
