@@ -5,7 +5,15 @@ import com.spotify.lld.playlist.PlaylistVisibility;
 import com.spotify.lld.social.PlaylistAccessControl;
 import com.spotify.lld.social.SocialGraph;
 
+/**
+ * Demo: directed follow graph + playlist visibility ACL.
+ * <p>
+ * Interview angle: follow/share without graph+privacy is incomplete and unsafe.
+ */
 public class SocialGraphScenario implements FeatureScenario {
+    /**
+     * Bob follows Alice; shows Bob cannot see PRIVATE, can see FOLLOWERS_ONLY + PUBLIC.
+     */
     @Override
     public void run(DemoFixtures fx) {
         System.out.println("--- Social Graph & Access Control ---");

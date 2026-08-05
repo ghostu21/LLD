@@ -4,7 +4,13 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Entry point. Run all scenarios, or one by name:
+ * CLI entry point that runs LLD feature demos (all, one, or list).
+ * <p>
+ * Why: each scenario maps to an interview pitfall (auth, session isolation,
+ * licensing, limits, etc.) so you can walk the fix aloud.
+ * <p>
+ * Logic: static registry of name → {@link FeatureScenario}; main builds shared
+ * {@link DemoFixtures}, then runs all scenarios or the named one.
  * <pre>
  *   java com.spotify.lld.demo.MusicStreamingService
  *   java com.spotify.lld.demo.MusicStreamingService auth
@@ -13,6 +19,7 @@ import java.util.Map;
  */
 public class MusicStreamingService {
 
+    /** Ordered map so "run all" prints scenarios in a stable interview-friendly order. */
     private static final Map<String, FeatureScenario> SCENARIOS = new LinkedHashMap<>();
 
     static {
@@ -29,6 +36,14 @@ public class MusicStreamingService {
         SCENARIOS.put("limits", new LimitsScenario());
     }
 
+    /**
+     * Dispatches CLI args:
+     * <ul>
+     *   <li>no args → run every scenario</li>
+     *   <li>{@code list} → print scenario names</li>
+     *   <li>name → run that scenario only</li>
+     * </ul>
+     */
     public static void main(String[] args) throws Exception {
         if (args.length > 0 && "list".equalsIgnoreCase(args[0])) {
             printUsage();
@@ -59,6 +74,7 @@ public class MusicStreamingService {
         System.out.println("\n=== Done: " + name + " ===");
     }
 
+    /** Prints usage and the registered scenario keys. */
     private static void printUsage() {
         System.out.println("Usage: java com.spotify.lld.demo.MusicStreamingService [scenario|list]");
         System.out.println("Scenarios:");

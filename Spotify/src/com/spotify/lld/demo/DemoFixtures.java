@@ -3,7 +3,15 @@ package com.spotify.lld.demo;
 import com.spotify.lld.auth.User;
 import com.spotify.lld.catalog.Song;
 
-/** Shared users and songs for feature demos. */
+/**
+ * Shared sample data for all demos (Alice US, Bob IN, three songs).
+ * <p>
+ * Why: scenarios need consistent users/tracks so geo-license and ACL demos
+ * stay readable (e.g. Bob in IN blocked from US-only Queen).
+ * <p>
+ * Logic: constructor creates two users with different country codes and three
+ * songs with different byte payload sizes for streaming demos.
+ */
 public final class DemoFixtures {
     public final User alice;
     public final User bob;
@@ -11,6 +19,7 @@ public final class DemoFixtures {
     public final Song song2;
     public final Song song3;
 
+    /** Builds Alice (US), Bob (IN), and Queen / Ed Sheeran / A.R. Rahman tracks. */
     public DemoFixtures() throws Exception {
         alice = new User("alice", "secret123", "US");
         bob = new User("bob", "pass456", "IN");

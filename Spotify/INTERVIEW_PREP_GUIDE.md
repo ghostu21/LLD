@@ -207,4 +207,5 @@ Walk one scenario aloud; tie it back to the problem number in section 4.
 ---
 
 *Companion overview of the repo layout: see `README.md`.*  
+*13 problems + solutions (examples + interviewer view): see `PROBLEMS_AND_SOLUTIONS.md`.*  
 *Senior (5+ YOE) interview questions: see `INTERVIEW_QUESTIONS.md`.*

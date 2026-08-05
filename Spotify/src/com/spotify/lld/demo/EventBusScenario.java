@@ -4,7 +4,13 @@ import com.spotify.lld.events.AsyncEventBus;
 import com.spotify.lld.events.MusicEvent;
 import com.spotify.lld.events.NotificationService;
 
+/**
+ * Demo: async Observer — publish like/release/follow → NotificationService fan-out.
+ * <p>
+ * Interview angle: Observer must be async; sync listeners block the play path.
+ */
 public class EventBusScenario implements FeatureScenario {
+    /** Subscribes NotificationService, publishes three event types, waits for workers. */
     @Override
     public void run(DemoFixtures fx) throws Exception {
         System.out.println("--- Async Event Bus (Observer) ---");

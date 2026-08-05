@@ -6,7 +6,13 @@ import com.spotify.lld.recommendation.RecommendationEngine;
 
 import java.util.List;
 
+/**
+ * Demo: event-driven affinity (PLAY/LIKE/REPEAT/SKIP) → ranked recommendations.
+ * <p>
+ * Interview angle: recommendations are an event stream, not a method stub.
+ */
 public class RecommendationScenario implements FeatureScenario {
+    /** Feeds Alice listen events; asserts top-1 is the heavily liked Queen track. */
     @Override
     public void run(DemoFixtures fx) {
         System.out.println("--- Recommendations (event-driven) ---");

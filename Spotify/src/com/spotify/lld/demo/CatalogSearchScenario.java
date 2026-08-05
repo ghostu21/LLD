@@ -5,7 +5,13 @@ import com.spotify.lld.catalog.Song;
 
 import java.util.List;
 
+/**
+ * Demo: Trie-backed partial title/artist search (not list scan).
+ * <p>
+ * Interview angle: O(n) catalog scan dies at tens of millions of tracks.
+ */
 public class CatalogSearchScenario implements FeatureScenario {
+    /** Indexes three songs and queries with partial strings like "bohe" / "sheer". */
     @Override
     public void run(DemoFixtures fx) {
         System.out.println("--- Catalog Search (Trie) ---");

@@ -4,7 +4,15 @@ import com.spotify.lld.playback.PlaybackSession;
 import com.spotify.lld.playback.PlayerState;
 import com.spotify.lld.playback.SessionManager;
 
+/**
+ * Demo: per-session players — Alice stop must not affect Bob.
+ * <p>
+ * Interview angle: global MusicPlayer singleton is the wrong abstraction.
+ */
 public class SessionPlaybackScenario implements FeatureScenario {
+    /**
+     * Creates two sessions, plays different songs, stops Alice, asserts Bob still PLAYING.
+     */
     @Override
     public void run(DemoFixtures fx) {
         System.out.println("--- Per-Session Playback ---");

@@ -2,7 +2,13 @@ package com.spotify.lld.demo;
 
 import com.spotify.lld.offline.DownloadManager;
 
+/**
+ * Demo: offline download is device-bound (wrong device cannot play).
+ * <p>
+ * Interview angle: offline ≠ save file — need device bind, expiry, encryption.
+ */
 public class OfflineModeScenario implements FeatureScenario {
+    /** Downloads on Alice's phone device; asserts playable only on that deviceId. */
     @Override
     public void run(DemoFixtures fx) {
         System.out.println("--- Offline Mode (DRM-style constraints) ---");

@@ -3,7 +3,15 @@ package com.spotify.lld.demo;
 import com.spotify.lld.playlist.Playlist;
 import com.spotify.lld.playlist.PlaylistVisibility;
 
+/**
+ * Demo: nested playlists with cycle + self-add rejection, then safe play().
+ * <p>
+ * Interview angle: Composite without cycle/depth guards → StackOverflowError.
+ */
 public class PlaylistScenario implements FeatureScenario {
+    /**
+     * Builds Road Trip → Rock Mix nest, tries illegal cycle/self-add, then plays.
+     */
     @Override
     public void run(DemoFixtures fx) {
         System.out.println("--- Playlists (thread-safe + cycle guard) ---");

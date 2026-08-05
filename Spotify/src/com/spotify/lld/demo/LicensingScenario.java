@@ -7,7 +7,13 @@ import com.spotify.lld.license.LicenseService;
 import java.time.Instant;
 import java.util.Set;
 
+/**
+ * Demo: country + time-window licensing (Queen US/GB, Jai Ho IN).
+ * <p>
+ * Interview angle: “Block in India, allow in US” — model geo ∩ validity window.
+ */
 public class LicensingScenario implements FeatureScenario {
+    /** Registers licenses, prints canPlay matrix, assertPlayable blocks Bob (IN). */
     @Override
     public void run(DemoFixtures fx) {
         System.out.println("--- Licensing (country + time window) ---");
