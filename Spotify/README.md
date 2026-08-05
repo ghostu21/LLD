@@ -90,6 +90,7 @@ Social / notify path: listen or follow actions → `AsyncEventBus` → listeners
 
 - `README.md` — this file (structure + run)
 - `INTERVIEW_PREP_GUIDE.md` — patterns, concepts, trap answers for interviews
+- `INTERVIEW_QUESTIONS.md` — senior (5+ YOE) interview questions by topic
 
 ## Notes
 
