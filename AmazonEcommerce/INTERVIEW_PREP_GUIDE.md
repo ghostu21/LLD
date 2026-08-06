@@ -197,5 +197,6 @@ Walk one scenario aloud; tie it back to the problem number in `PROBLEMS_AND_SOLU
 ---
 
 *Companion overview: `README.md`.*  
+*Class relationships + DB tables: `CLASS_AND_DATA_MODEL.md`.*  
 *Problems + examples + interviewer view: `PROBLEMS_AND_SOLUTIONS.md`.*  
 *Senior questions: `INTERVIEW_QUESTIONS.md`.*
