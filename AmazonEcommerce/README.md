@@ -82,6 +82,7 @@ Order ──return──► ReturnService → Refund
 ## Docs
 
 - `README.md` — this file (structure + run)
+- `API_REFERENCE.md` — REST APIs with request/response per requirement
 - `CLASS_AND_DATA_MODEL.md` — class relationships + DB tables
 - `PROBLEMS_AND_SOLUTIONS.md` — 5 interview pitfalls with examples + interviewer perspective
 - `INTERVIEW_PREP_GUIDE.md` — patterns, concepts, trap answers
