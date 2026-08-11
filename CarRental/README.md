@@ -76,6 +76,7 @@ cancel → CancellationPolicy fee + free vehicle
 
 ## Docs
 
+- `HLD.md` — **high-level design**: final diagram, tech choices vs alternatives, components, interview talking points
 - `README.md` — this file
 - `API_REFERENCE.md` — REST APIs (what, logic, request/response)
 - `CLASS_AND_DATA_MODEL.md` — class relationships + DB tables

@@ -88,6 +88,7 @@ Social / notify path: listen or follow actions → `AsyncEventBus` → listeners
 
 ## Docs
 
+- `HLD.md` — **high-level design**: final diagram, tech choices vs alternatives, components, interview talking points
 - `README.md` — this file (structure + run)
 - `API_REFERENCE.md` — REST APIs with request/response per requirement
 - `CLASS_AND_DATA_MODEL.md` — class relationships + DB tables
