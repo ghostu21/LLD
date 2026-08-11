@@ -193,8 +193,11 @@ public final class MonitoringDashboard {
                 actual,
                 drift,
                 missed));
+        // CopyOnWriteArrayList.subList().clear() is awkward; rebuild when oversized
         if (samples.size() > 5000) {
-            samples.subList(0, samples.size() - 4000).clear();
+            List<DriftSample> trimmed = new ArrayList<>(samples.subList(samples.size() - 4000, samples.size()));
+            samples.clear();
+            samples.addAll(trimmed);
         }
     }
 

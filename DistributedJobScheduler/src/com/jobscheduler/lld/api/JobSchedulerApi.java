@@ -185,6 +185,7 @@ public final class JobSchedulerApi {
         }
         String cron = schedule.getCronExpr().orElseThrow();
         ZoneId zone = schedule.getTimezone();
-        return new CronExpression(cron).nextAfter(now.minusSeconds(1), zone);
+        // Strictly after now — never schedule a first fire in the past
+        return new CronExpression(cron).nextAfter(now, zone);
     }
 }

@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 
 /**
@@ -56,8 +57,8 @@ public final class WorkerPool {
     private final AtomicLong fencingToken = new AtomicLong(0);
     private final Map<String, WorkerNode> workers = new ConcurrentHashMap<>();
     private final List<JobExecution> recentExecutions = new CopyOnWriteArrayList<>();
-    private BiConsumer<com.jobscheduler.lld.job.Job, JobExecution> jobHandler =
-            (j, e) -> { /* default success */ };
+    private final AtomicReference<BiConsumer<com.jobscheduler.lld.job.Job, JobExecution>> jobHandler =
+            new AtomicReference<>((j, e) -> { /* default success */ });
 
     public WorkerPool(JobStore jobStore, ExecutionStore executionStore,
                       DeadLetterQueue deadLetterQueue, Coordinator coordinator,
@@ -71,7 +72,7 @@ public final class WorkerPool {
     }
 
     public void setJobHandler(BiConsumer<com.jobscheduler.lld.job.Job, JobExecution> handler) {
-        this.jobHandler = handler;
+        this.jobHandler.set(handler != null ? handler : (j, e) -> { });
     }
 
     public void syncFencingToken(long token) {

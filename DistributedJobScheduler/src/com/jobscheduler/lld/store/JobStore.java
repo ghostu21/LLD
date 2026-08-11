@@ -40,7 +40,7 @@ public final class JobStore {
         return jobs.values().stream()
                 .filter(j -> j.getStatus() == JobStatus.ACTIVE)
                 .filter(j -> shardOf(j.getShardKey(), shardCount) == shardId)
-                .filter(j -> !j.getNextRunAt().isAfter(now))
+                .filter(j -> j.getNextRunAt() != null && !j.getNextRunAt().isAfter(now))
                 .sorted(Comparator.comparing(Job::getNextRunAt)
                         .thenComparing(Job::getPriority, Comparator.reverseOrder()))
                 .limit(limit)

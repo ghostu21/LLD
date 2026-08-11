@@ -1,5 +1,6 @@
 package com.jobscheduler.lld.worker;
 
+import com.jobscheduler.lld.job.ExecutionStatus;
 import com.jobscheduler.lld.job.Job;
 import com.jobscheduler.lld.job.JobExecution;
 import com.jobscheduler.lld.job.RetryPolicy;
@@ -10,9 +11,11 @@ import com.jobscheduler.lld.store.JobStore;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 
 /**
@@ -26,19 +29,19 @@ public final class JobExecutor {
     private final DeadLetterQueue deadLetterQueue;
     private final Duration leaseTtl;
     private final AtomicLong acceptedFencingToken;
-    private final BiConsumer<Job, JobExecution> handler;
+    private final AtomicReference<BiConsumer<Job, JobExecution>> handler;
 
     public JobExecutor(String workerId, JobStore jobStore, ExecutionStore executionStore,
                        DeadLetterQueue deadLetterQueue, Duration leaseTtl,
                        AtomicLong acceptedFencingToken,
-                       BiConsumer<Job, JobExecution> handler) {
+                       AtomicReference<BiConsumer<Job, JobExecution>> handler) {
         this.workerId = Objects.requireNonNull(workerId);
         this.jobStore = jobStore;
         this.executionStore = executionStore;
         this.deadLetterQueue = deadLetterQueue;
         this.leaseTtl = leaseTtl != null ? leaseTtl : Duration.ofSeconds(30);
         this.acceptedFencingToken = acceptedFencingToken;
-        this.handler = handler != null ? handler : (j, e) -> { /* no-op success */ };
+        this.handler = handler;
     }
 
     public String getWorkerId() {
@@ -69,21 +72,23 @@ public final class JobExecutor {
 
         JobExecution execution = executionStore.putIfAbsent(candidate);
         if (execution != candidate) {
-            // Duplicate delivery — already recorded
             if (execution.isTerminal()) {
                 return execution;
             }
-            // Retry path: bump attempt under new lease if previous failed
-            if (execution.getStatus().name().equals("FAILED")) {
-                return retry(job, execution, now, fencingToken);
+            if (execution.getStatus() == ExecutionStatus.FAILED) {
+                return retry(job, execution, now);
+            }
+            // Still LEASED/RUNNING on another worker — do not steal unless lease expired
+            if (execution.getLeaseExpiresAt() != null && execution.getLeaseExpiresAt().isBefore(now)) {
+                return retry(job, execution, now);
             }
             return execution;
         }
 
-        return run(job, execution, now);
+        return run(job, execution);
     }
 
-    private JobExecution retry(Job job, JobExecution execution, Instant now, long fencingToken) {
+    private JobExecution retry(Job job, JobExecution execution, Instant now) {
         RetryPolicy retry = job.getRetryPolicy();
         if (execution.getAttempt() >= retry.getMaxAttempts()) {
             deadLetterQueue.enqueue(execution, "max attempts exhausted");
@@ -91,14 +96,17 @@ public final class JobExecutor {
         }
         execution.bumpAttempt();
         execution.assignLease(workerId, now.plus(leaseTtl));
-        return run(job, execution, now);
+        return run(job, execution);
     }
 
-    private JobExecution run(Job job, JobExecution execution, Instant now) {
+    private JobExecution run(Job job, JobExecution execution) {
         execution.markRunning();
         job.setLastIdempotencyKey(execution.getIdempotencyKey());
         try {
-            handler.accept(job, execution);
+            BiConsumer<Job, JobExecution> h = handler.get();
+            if (h != null) {
+                h.accept(job, execution);
+            }
             execution.markSucceeded();
         } catch (RuntimeException ex) {
             execution.markFailed(ex.getMessage());
@@ -111,32 +119,27 @@ public final class JobExecutor {
     }
 
     /**
-     * Reclaim expired leases (worker crash recovery).
+     * Reclaim expired leases (worker crash recovery) — mark failed and leave
+     * eligible for retry on the next delivery of the same fire / explicit retry.
      */
     public void reclaimExpiredLeases(Instant now) {
-        executionStore.findByStatus(com.jobscheduler.lld.job.ExecutionStatus.LEASED).stream()
-                .filter(e -> e.getLeaseExpiresAt() != null && e.getLeaseExpiresAt().isBefore(now))
-                .forEach(e -> {
-                    Job job = jobStore.findById(e.getJobId()).orElse(null);
-                    if (job == null) {
-                        return;
-                    }
-                    e.markFailed("lease expired");
-                    if (e.getAttempt() >= job.getRetryPolicy().getMaxAttempts()) {
-                        deadLetterQueue.enqueue(e, "lease expired, max attempts");
-                    }
-                });
-        executionStore.findByStatus(com.jobscheduler.lld.job.ExecutionStatus.RUNNING).stream()
-                .filter(e -> e.getLeaseExpiresAt() != null && e.getLeaseExpiresAt().isBefore(now))
-                .forEach(e -> {
-                    Job job = jobStore.findById(e.getJobId()).orElse(null);
-                    if (job == null) {
-                        return;
-                    }
-                    e.markFailed("lease expired while running");
-                    if (e.getAttempt() >= job.getRetryPolicy().getMaxAttempts()) {
-                        deadLetterQueue.enqueue(e, "lease expired while running");
-                    }
-                });
+        for (ExecutionStatus status : List.of(ExecutionStatus.LEASED, ExecutionStatus.RUNNING)) {
+            for (JobExecution e : executionStore.findByStatus(status)) {
+                if (e.getLeaseExpiresAt() == null || !e.getLeaseExpiresAt().isBefore(now)) {
+                    continue;
+                }
+                Job job = jobStore.findById(e.getJobId()).orElse(null);
+                if (job == null) {
+                    continue;
+                }
+                String reason = status == ExecutionStatus.RUNNING
+                        ? "lease expired while running"
+                        : "lease expired";
+                e.markFailed(reason);
+                if (e.getAttempt() >= job.getRetryPolicy().getMaxAttempts()) {
+                    deadLetterQueue.enqueue(e, reason + ", max attempts");
+                }
+            }
+        }
     }
 }

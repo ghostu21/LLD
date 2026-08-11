@@ -5,6 +5,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -42,14 +43,19 @@ public final class CronExpression {
 
     /**
      * Next fire strictly after {@code after}, in the given timezone (DST-aware via ZoneId).
+     * Starts at the next whole minute after {@code after} so results are never &le; {@code after}.
      */
     public Instant nextAfter(Instant after, ZoneId zone) {
-        ZonedDateTime cursor = after.atZone(zone).plusMinutes(1).withSecond(0).withNano(0);
-        // Bound search to ~2 years to avoid infinite loops on impossible specs
+        ZonedDateTime cursor = after.atZone(zone)
+                .truncatedTo(ChronoUnit.MINUTES)
+                .plusMinutes(1);
         ZonedDateTime limit = cursor.plusYears(2);
-        while (cursor.isBefore(limit)) {
+        while (!cursor.isAfter(limit)) {
             if (matches(cursor)) {
-                return cursor.toInstant();
+                Instant candidate = cursor.toInstant();
+                if (candidate.isAfter(after)) {
+                    return candidate;
+                }
             }
             cursor = cursor.plusMinutes(1);
         }
@@ -81,6 +87,9 @@ public final class CronExpression {
                 }
             } else if (token.startsWith("*/")) {
                 int step = Integer.parseInt(token.substring(2));
+                if (step <= 0) {
+                    throw new IllegalArgumentException("cron step must be > 0: " + token);
+                }
                 for (int i = min; i <= max; i += step) {
                     vals.add(i);
                 }

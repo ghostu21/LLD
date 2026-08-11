@@ -78,6 +78,9 @@ public final class DueScanner {
     public void reloadWheel(Instant now) {
         wheel.clear();
         for (Job job : jobStore.findActiveInShard(shardId, shardCount)) {
+            if (job.getNextRunAt() == null) {
+                continue;
+            }
             Instant withJitter = applyJitter(job.getNextRunAt());
             wheel.offer(job.getJobId(), withJitter, now);
         }
@@ -87,13 +90,15 @@ public final class DueScanner {
         List<FireIntent> fires = new ArrayList<>();
         // Also pick DB-due jobs not yet in wheel (far → near handoff)
         for (Job job : jobStore.findDueInShard(shardId, shardCount, now.plus(clock.getSkewTolerance()), 500)) {
-            wheel.offer(job.getJobId(), job.getNextRunAt(), now);
+            if (job.getNextRunAt() != null) {
+                wheel.offer(job.getJobId(), job.getNextRunAt(), now);
+            }
         }
 
         List<String> dueIds = wheel.advanceTo(now);
         for (String jobId : dueIds) {
             jobStore.findById(jobId).ifPresent(job -> {
-                if (job.getStatus() != JobStatus.ACTIVE) {
+                if (job.getStatus() != JobStatus.ACTIVE || job.getNextRunAt() == null) {
                     return;
                 }
                 if (!clock.isDue(job.getNextRunAt())) {
@@ -114,10 +119,23 @@ public final class DueScanner {
     private List<FireIntent> planFires(Job job, Instant now) {
         List<FireIntent> intents = new ArrayList<>();
         Instant scheduled = job.getNextRunAt();
+        if (scheduled == null) {
+            return intents;
+        }
 
         if (job.getOverlapPolicy() == OverlapPolicy.SKIP
                 && executionStore.hasActiveRun(job.getJobId())) {
-            return intents;
+            return intents; // skip this occurrence; caller still rearms
+        }
+
+        if (job.getOverlapPolicy() == OverlapPolicy.REPLACE
+                && executionStore.hasActiveRun(job.getJobId())) {
+            for (var active : executionStore.findByJobId(job.getJobId())) {
+                if (active.getStatus() == com.jobscheduler.lld.job.ExecutionStatus.LEASED
+                        || active.getStatus() == com.jobscheduler.lld.job.ExecutionStatus.RUNNING) {
+                    active.markSkipped("replaced by newer fire");
+                }
+            }
         }
 
         // Catch-up for recurring jobs that fell behind
@@ -159,7 +177,7 @@ public final class DueScanner {
         job.setLastRunAt(now);
         if (spec.getType() == JobType.ONE_OFF) {
             job.forceStatus(JobStatus.COMPLETED);
-            job.setNextRunAt(Instant.MAX);
+            job.setNextRunAt(null);
             return;
         }
         CronExpression cron = new CronExpression(spec.getCronExpr().orElseThrow());
