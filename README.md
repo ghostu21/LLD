@@ -10,6 +10,7 @@ This project contains Low-Level Design (LLD) implementations of certain systems.
 | 2 | Amazon Ecommerce — marketplace | `AmazonEcommerce/` | [`HLD.md`](./AmazonEcommerce/HLD.md) | [`README.md`](./AmazonEcommerce/README.md) |
 | 3 | Car Rental — multi-branch | `CarRental/` | [`HLD.md`](./CarRental/HLD.md) | [`README.md`](./CarRental/README.md) |
 | 4 | Distributed Job Scheduler — cron / timers | `DistributedJobScheduler/` | [`HLD.md`](./DistributedJobScheduler/HLD.md) | [`README.md`](./DistributedJobScheduler/README.md) |
+| 5 | Hotel Management — rooms / booking / HK | `HotelManagementSystem/` | [`HLD.md`](./HotelManagementSystem/HLD.md) | [`README.md`](./HotelManagementSystem/README.md) |
 
 ## What’s in each `HLD.md`
 
