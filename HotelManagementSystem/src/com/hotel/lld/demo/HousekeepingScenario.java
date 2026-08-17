@@ -1,7 +1,6 @@
 package com.hotel.lld.demo;
 
 import com.hotel.lld.booking.RoomBooking;
-import com.hotel.lld.room.RoomStatus;
 import com.hotel.lld.service.HouseKeepingTask;
 import com.hotel.lld.service.TaskStatus;
 
@@ -28,7 +27,10 @@ public class HousekeepingScenario implements FeatureScenario {
         System.out.println("Checked out → room status="
                 + fx.inventory.findByNumber("201").getStatus());
 
-        HouseKeepingTask task = fx.housekeeping.tasksForRoom("201").get(0);
+        HouseKeepingTask task = fx.housekeeping.tasksForRoom("201").stream()
+                .filter(t -> t.getStatus() == TaskStatus.PENDING)
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("No pending housekeeping task for room 201"));
         System.out.println("Task " + task.getTaskId() + " status=" + task.getStatus()
                 + " staff=" + task.getStaffId());
 

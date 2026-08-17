@@ -6,13 +6,14 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Async payment orchestrator with retry and exponential backoff.
+ * Async payment orchestrator with retry, exponential backoff, and idempotency.
  */
 public class PaymentService {
     private static final int MAX_RETRIES = 3;
     private static final long BASE_BACKOFF_MS = 200L;
 
     private final Map<PaymentMethod, PaymentGateway> gateways = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, PaymentResult> resultsByPaymentId = new ConcurrentHashMap<>();
 
     public void registerGateway(PaymentMethod method, PaymentGateway gateway) {
         gateways.put(method, gateway);
@@ -23,6 +24,19 @@ public class PaymentService {
     }
 
     PaymentResult processWithRetry(PaymentRequest request) {
+        if (request == null || request.getPaymentId() == null) {
+            return PaymentResult.failure("Payment request is required");
+        }
+
+        return resultsByPaymentId.compute(request.getPaymentId(), (id, existing) -> {
+            if (existing != null && existing.isSuccess()) {
+                return existing;
+            }
+            return chargeWithRetry(request);
+        });
+    }
+
+    private PaymentResult chargeWithRetry(PaymentRequest request) {
         PaymentGateway gateway = gateways.get(request.getMethod());
         if (gateway == null) {
             return PaymentResult.failure("No gateway for method: " + request.getMethod());

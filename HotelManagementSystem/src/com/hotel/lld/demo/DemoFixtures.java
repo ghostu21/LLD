@@ -7,7 +7,6 @@ import com.hotel.lld.booking.FullRefundBefore24HoursPolicy;
 import com.hotel.lld.events.AsyncEventBus;
 import com.hotel.lld.events.EmailService;
 import com.hotel.lld.events.HotelEventType;
-import com.hotel.lld.events.NotificationService;
 import com.hotel.lld.events.PushNotificationService;
 import com.hotel.lld.events.SMSService;
 import com.hotel.lld.hotel.Hotel;
@@ -43,7 +42,6 @@ public final class DemoFixtures {
 
     public final RoomInventory inventory;
     public final AsyncEventBus eventBus;
-    public final NotificationService notifications;
     public final BillingService billingService;
     public final PaymentService paymentService;
     public final HousekeepingWorkflow housekeeping;
@@ -76,7 +74,6 @@ public final class DemoFixtures {
         extraPillow = new Amenity("AM-PILLOW", "Extra Pillow", 5.0);
 
         eventBus = new AsyncEventBus();
-        notifications = new NotificationService();
         EmailService email = new EmailService();
         SMSService sms = new SMSService();
         PushNotificationService push = new PushNotificationService();

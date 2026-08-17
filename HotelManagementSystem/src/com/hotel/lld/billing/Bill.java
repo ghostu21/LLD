@@ -11,15 +11,15 @@ public class Bill {
     private final List<BillItem> items = new ArrayList<>();
     private boolean paid;
 
-    public void addItem(BillItem item) {
+    public synchronized void addItem(BillItem item) {
         items.add(item);
     }
 
-    public List<BillItem> getItems() {
-        return Collections.unmodifiableList(items);
+    public synchronized List<BillItem> getItems() {
+        return Collections.unmodifiableList(new ArrayList<>(items));
     }
 
-    public double getTotal() {
+    public synchronized double getTotal() {
         return items.stream().mapToDouble(BillItem::getAmount).sum();
     }
 

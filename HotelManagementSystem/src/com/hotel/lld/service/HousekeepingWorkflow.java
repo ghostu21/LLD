@@ -6,6 +6,7 @@ import com.hotel.lld.room.RoomStatus;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -23,6 +24,14 @@ public class HousekeepingWorkflow {
     }
 
     public HouseKeepingTask assignAfterCheckout(String roomNumber, String staffId) {
+        for (HouseKeepingTask existing : tasks.values()) {
+            if (existing.getRoomNumber().equals(roomNumber)
+                    && (existing.getStatus() == TaskStatus.PENDING
+                    || existing.getStatus() == TaskStatus.IN_PROGRESS)) {
+                return existing;
+            }
+        }
+
         Room room = inventory.findByNumber(roomNumber);
         room.setStatus(RoomStatus.BEING_SERVICED);
 
@@ -34,16 +43,22 @@ public class HousekeepingWorkflow {
 
     public void start(String taskId) {
         HouseKeepingTask task = require(taskId);
+        if (task.getStatus() != TaskStatus.PENDING) {
+            throw new IllegalStateException("Cannot start task in status " + task.getStatus());
+        }
         task.setStatus(TaskStatus.IN_PROGRESS);
     }
 
     public void complete(String taskId) {
         HouseKeepingTask task = require(taskId);
+        if (task.getStatus() == TaskStatus.COMPLETED || task.getStatus() == TaskStatus.CANCELLED) {
+            throw new IllegalStateException("Cannot complete task in status " + task.getStatus());
+        }
         task.setStatus(TaskStatus.COMPLETED);
         task.setCompletedAt(LocalDateTime.now());
 
         Room room = inventory.findByNumber(task.getRoomNumber());
-        room.setStatus(RoomStatus.AVAILABLE);
+        room.markAvailableIfBeingServiced();
     }
 
     public List<HouseKeepingTask> allTasks() {
@@ -57,6 +72,7 @@ public class HousekeepingWorkflow {
                 result.add(t);
             }
         }
+        result.sort(Comparator.comparing(HouseKeepingTask::getAssignedAt).reversed());
         return result;
     }
 

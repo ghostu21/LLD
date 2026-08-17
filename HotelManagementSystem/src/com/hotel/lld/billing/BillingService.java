@@ -22,6 +22,9 @@ public class BillingService {
     }
 
     public void appendServiceCharge(Bill bill, ServiceCharge charge) {
+        if (bill == null) {
+            throw new IllegalArgumentException("bill is required");
+        }
         bill.addItem(new BillItem(mapType(charge.getType()), charge.getDescription(), charge.getAmount()));
     }
 

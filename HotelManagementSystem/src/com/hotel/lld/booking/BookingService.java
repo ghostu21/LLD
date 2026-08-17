@@ -21,6 +21,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -62,18 +63,20 @@ public class BookingService {
      * Flow: Search → Lock Room → Validate Availability → Create Booking → Mark Dates Reserved
      */
     public RoomBooking book(String guestId, String roomNumber, LocalDate checkIn, int nights) {
+        if (guestId == null || guestId.isBlank()) {
+            throw new IllegalArgumentException("guestId is required");
+        }
+        if (roomNumber == null || roomNumber.isBlank()) {
+            throw new IllegalArgumentException("roomNumber is required");
+        }
+        if (checkIn == null) {
+            throw new IllegalArgumentException("checkIn is required");
+        }
         if (nights <= 0) {
             throw new IllegalArgumentException("nights must be positive");
         }
 
-        ReentrantLock lock = roomLocks.computeIfAbsent(roomNumber, k -> new ReentrantLock());
-        boolean acquired = false;
-        try {
-            acquired = lock.tryLock(LOCK_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-            if (!acquired) {
-                throw new BookingTimeoutException(roomNumber);
-            }
-
+        return withRoomLock(roomNumber, () -> {
             Room room = inventory.findByNumber(roomNumber);
             if (!room.isAvailable(checkIn, nights)) {
                 throw new RoomNotAvailableException(roomNumber, "dates not free on calendar");
@@ -82,9 +85,12 @@ public class BookingService {
             String reservationNumber = "HTL-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
             RoomBooking booking = new RoomBooking(reservationNumber, guestId, roomNumber, checkIn, nights);
 
-            Bill bill = billingService.generateBill(booking, room);
+            billingService.generateBill(booking, room);
             room.markReserved(checkIn, nights);
-            room.setStatus(RoomStatus.RESERVED);
+            // Do not overwrite OCCUPIED / BEING_SERVICED — a future stay is calendar-only.
+            if (checkIn.equals(LocalDate.now()) && room.getStatus() == RoomStatus.AVAILABLE) {
+                room.setStatus(RoomStatus.RESERVED);
+            }
             booking.setStatus(BookingStatus.CONFIRMED);
             bookings.put(reservationNumber, booking);
 
@@ -94,14 +100,7 @@ public class BookingService {
                     "Confirmed " + checkIn + " for " + nights + " night(s)"));
 
             return booking;
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new BookingTimeoutException(roomNumber);
-        } finally {
-            if (acquired) {
-                lock.unlock();
-            }
-        }
+        });
     }
 
     /**
@@ -109,25 +108,21 @@ public class BookingService {
      */
     public Refund cancel(String reservationNumber, LocalDateTime cancelAt) {
         RoomBooking booking = requireBooking(reservationNumber);
-        if (booking.getStatus() == BookingStatus.CANCELLED
-                || booking.getStatus() == BookingStatus.CHECKED_OUT) {
-            throw new IllegalStateException("Cannot cancel booking in status " + booking.getStatus());
-        }
-
-        ReentrantLock lock = roomLocks.computeIfAbsent(booking.getRoomNumber(), k -> new ReentrantLock());
-        boolean acquired = false;
-        try {
-            acquired = lock.tryLock(LOCK_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-            if (!acquired) {
-                throw new BookingTimeoutException(booking.getRoomNumber());
+        return withRoomLock(booking.getRoomNumber(), () -> {
+            if (booking.getStatus() == BookingStatus.CANCELLED
+                    || booking.getStatus() == BookingStatus.CHECKED_OUT
+                    || booking.getStatus() == BookingStatus.CHECKED_IN) {
+                throw new IllegalStateException("Cannot cancel booking in status " + booking.getStatus());
             }
 
-            Refund refund = cancellationPolicy.calculateRefund(booking, cancelAt);
+            LocalDateTime when = cancelAt == null ? LocalDateTime.now() : cancelAt;
+            Refund refund = cancellationPolicy.calculateRefund(booking, when);
             billingService.applyRefund(booking.getBill(), refund);
 
             Room room = inventory.findByNumber(booking.getRoomNumber());
             room.markAvailable(booking.getCheckIn(), booking.getDurationInDays());
-            if (room.getStatus() == RoomStatus.RESERVED || room.getStatus() == RoomStatus.OCCUPIED) {
+            if (booking.getCheckIn().equals(LocalDate.now())
+                    && room.getStatus() == RoomStatus.RESERVED) {
                 room.setStatus(RoomStatus.AVAILABLE);
             }
 
@@ -138,29 +133,25 @@ public class BookingService {
                     refund.toString()));
 
             return refund;
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new BookingTimeoutException(booking.getRoomNumber());
-        } finally {
-            if (acquired) {
-                lock.unlock();
-            }
-        }
+        });
     }
 
     public void checkIn(String reservationNumber) {
         RoomBooking booking = requireBooking(reservationNumber);
-        if (booking.getStatus() != BookingStatus.CONFIRMED) {
-            throw new IllegalStateException("Check-in requires CONFIRMED status");
-        }
-        Room room = inventory.findByNumber(booking.getRoomNumber());
-        room.checkIn();
-        booking.setActualCheckIn(LocalDateTime.now());
-        booking.setStatus(BookingStatus.CHECKED_IN);
-        eventBus.publish(new HotelEvent(
-                HotelEventType.CHECKED_IN,
-                reservationNumber, booking.getGuestId(), booking.getRoomNumber(),
-                "Guest checked in"));
+        withRoomLock(booking.getRoomNumber(), () -> {
+            if (booking.getStatus() != BookingStatus.CONFIRMED) {
+                throw new IllegalStateException("Check-in requires CONFIRMED status");
+            }
+            Room room = inventory.findByNumber(booking.getRoomNumber());
+            room.checkIn();
+            booking.setActualCheckIn(LocalDateTime.now());
+            booking.setStatus(BookingStatus.CHECKED_IN);
+            eventBus.publish(new HotelEvent(
+                    HotelEventType.CHECKED_IN,
+                    reservationNumber, booking.getGuestId(), booking.getRoomNumber(),
+                    "Guest checked in"));
+            return null;
+        });
     }
 
     /**
@@ -168,31 +159,44 @@ public class BookingService {
      */
     public void checkOut(String reservationNumber) {
         RoomBooking booking = requireBooking(reservationNumber);
-        if (booking.getStatus() != BookingStatus.CHECKED_IN) {
-            throw new IllegalStateException("Check-out requires CHECKED_IN status");
-        }
-        Room room = inventory.findByNumber(booking.getRoomNumber());
-        room.checkOut();
-        booking.setActualCheckOut(LocalDateTime.now());
-        booking.setStatus(BookingStatus.CHECKED_OUT);
-        billingService.refreshWithCharges(booking);
+        withRoomLock(booking.getRoomNumber(), () -> {
+            if (booking.getStatus() != BookingStatus.CHECKED_IN) {
+                throw new IllegalStateException("Check-out requires CHECKED_IN status");
+            }
+            Room room = inventory.findByNumber(booking.getRoomNumber());
+            room.checkOut();
+            booking.setActualCheckOut(LocalDateTime.now());
+            booking.setStatus(BookingStatus.CHECKED_OUT);
+            billingService.refreshWithCharges(booking);
 
-        housekeepingWorkflow.assignAfterCheckout(room.getRoomNumber(), "STAFF-HK-01");
+            housekeepingWorkflow.assignAfterCheckout(room.getRoomNumber(), "STAFF-HK-01");
 
-        eventBus.publish(new HotelEvent(
-                HotelEventType.CHECKED_OUT,
-                reservationNumber, booking.getGuestId(), booking.getRoomNumber(),
-                "Guest checked out — housekeeping assigned"));
+            eventBus.publish(new HotelEvent(
+                    HotelEventType.CHECKED_OUT,
+                    reservationNumber, booking.getGuestId(), booking.getRoomNumber(),
+                    "Guest checked out — housekeeping assigned"));
+            return null;
+        });
     }
 
     public void addServiceCharge(String reservationNumber, ServiceCharge charge) {
-        RoomBooking booking = requireBooking(reservationNumber);
-        if (booking.getStatus() != BookingStatus.CHECKED_IN
-                && booking.getStatus() != BookingStatus.CONFIRMED) {
-            throw new IllegalStateException("Cannot add charges in status " + booking.getStatus());
+        if (charge == null) {
+            throw new IllegalArgumentException("charge is required");
         }
-        booking.addCharge(charge);
-        billingService.appendServiceCharge(booking.getBill(), charge);
+        RoomBooking booking = requireBooking(reservationNumber);
+        withRoomLock(booking.getRoomNumber(), () -> {
+            if (booking.getStatus() != BookingStatus.CHECKED_IN
+                    && booking.getStatus() != BookingStatus.CONFIRMED) {
+                throw new IllegalStateException("Cannot add charges in status " + booking.getStatus());
+            }
+            booking.addCharge(charge);
+            Bill bill = booking.getBill();
+            if (bill == null) {
+                throw new IllegalStateException("Booking has no bill: " + reservationNumber);
+            }
+            billingService.appendServiceCharge(bill, charge);
+            return null;
+        });
     }
 
     public RoomBooking getBooking(String reservationNumber) {
@@ -219,18 +223,19 @@ public class BookingService {
 
     /** Publishes check-in / check-out reminders for demos and schedulers. */
     public void publishReminders(LocalDate today) {
+        LocalDate asOf = today == null ? LocalDate.now() : today;
         for (RoomBooking booking : bookings.values()) {
             if (booking.getStatus() != BookingStatus.CONFIRMED
                     && booking.getStatus() != BookingStatus.CHECKED_IN) {
                 continue;
             }
-            if (booking.getCheckIn().equals(today.plusDays(1))) {
+            if (booking.getCheckIn().equals(asOf.plusDays(1))) {
                 eventBus.publish(new HotelEvent(
                         HotelEventType.CHECK_IN_REMINDER,
                         booking.getReservationNumber(), booking.getGuestId(),
                         booking.getRoomNumber(), "Check-in tomorrow"));
             }
-            if (booking.getCheckOut().equals(today.plusDays(1))
+            if (booking.getCheckOut().equals(asOf.plusDays(1))
                     && booking.getStatus() == BookingStatus.CHECKED_IN) {
                 eventBus.publish(new HotelEvent(
                         HotelEventType.CHECK_OUT_REMINDER,
@@ -246,5 +251,24 @@ public class BookingService {
             throw new IllegalArgumentException("Booking not found: " + reservationNumber);
         }
         return booking;
+    }
+
+    private <T> T withRoomLock(String roomNumber, Supplier<T> action) {
+        ReentrantLock lock = roomLocks.computeIfAbsent(roomNumber, k -> new ReentrantLock());
+        boolean acquired = false;
+        try {
+            acquired = lock.tryLock(LOCK_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            if (!acquired) {
+                throw new BookingTimeoutException(roomNumber);
+            }
+            return action.get();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new BookingTimeoutException(roomNumber);
+        } finally {
+            if (acquired) {
+                lock.unlock();
+            }
+        }
     }
 }
