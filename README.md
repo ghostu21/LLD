@@ -11,6 +11,8 @@ This project contains Low-Level Design (LLD) implementations of certain systems.
 | 3 | Car Rental — multi-branch | `CarRental/` | [`HLD.md`](./CarRental/HLD.md) | [`README.md`](./CarRental/README.md) |
 | 4 | Distributed Job Scheduler — cron / timers | `DistributedJobScheduler/` | [`HLD.md`](./DistributedJobScheduler/HLD.md) | [`README.md`](./DistributedJobScheduler/README.md) |
 | 5 | Hotel Management — rooms / booking / HK | `HotelManagementSystem/` | [`HLD.md`](./HotelManagementSystem/HLD.md) | [`README.md`](./HotelManagementSystem/README.md) |
+| 6 | Design Patterns — GoF catalog + demos | `DesignPatterns/` | — | [`README.md`](./DesignPatterns/README.md) |
+| 7 | Recommendation Service — ranking / privacy | `RecommendationService/` | [`HLD.md`](./RecommendationService/HLD.md) | [`README.md`](./RecommendationService/README.md) |
 
 ## What’s in each `HLD.md`
 

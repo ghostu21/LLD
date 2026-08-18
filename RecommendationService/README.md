@@ -1,0 +1,101 @@
+# Recommendation Service LLD
+
+Low-level design of a **personalized product recommendation service** that addresses common interview pitfalls (one giant popularity list, leaking neighbor identity, no cold-start, sync scoring on the request thread, missing hide/ban filters, client-supplied userId as “auth”).
+
+## Features Required
+
+- **Placements:** `HOME`, `PRODUCT_DETAIL` (similar items), `CART`, `EMAIL`.
+- **Cold start:** guests and new members get **popularity**, never an empty slate.
+- **Personalization:** content-based (category/tags) + item–item collaborative (purchase co-occurrence).
+- **Hybrid ranking:** weighted ensemble; experiment **CONTROL** stays on safer popularity/content.
+- **Feedback loop:** view / click / like / purchase / dislike / hide (Command).
+- **Eligibility:** banned and out-of-stock SKUs are hard-filtered; purchases excluded on HOME.
+- **Diversity:** cap items per category so one affinity does not dominate.
+- **Explainability:** generic reason codes (`POPULAR`, `CONTENT`, `COLLABORATIVE`, `SIMILAR`, `HYBRID`) — **never** “because user X bought this”.
+- **Caching:** TTL cache of slates; busted on new feedback.
+- **Notifications:** async event bus on slate generation and feedback.
+- **Security:** salted passwords, session tokens, IDOR checks, rate limits, input bounds, no PII in responses.
+
+## Package structure
+
+```
+com.reco.lld
+├── account/     User, AuthService, Session, AccessControl, PasswordUtils
+├── catalog/     Item, Catalog, Category, ItemStatus
+├── profile/     Interaction*, UserProfile, ProfileService
+├── ranking/     RankingStrategy*, Factory, Hybrid, Fallback/Diversity decorators
+├── pipeline/    FilterChain (eligibility, seed, blocked, purchased)
+├── request/     RecommendationRequest (Builder), Response, Placement
+├── security/    RateLimiter, InputValidator
+├── experiment/  ExperimentAssigner (CONTROL / TREATMENT)
+├── cache/       TtlCache
+├── events/      AsyncEventBus, NotificationService
+├── command/     RecordInteractionCommand
+├── service/     RecommendationFacade, InteractionService, CatalogAdmin
+└── demo/        RecommendationService + *Scenario demos
+```
+
+## Run
+
+```bash
+cd RecommendationService
+javac -d out $(find src -name '*.java')
+java -cp out com.reco.lld.demo.RecommendationService              # all
+java -cp out com.reco.lld.demo.RecommendationService list         # names
+java -cp out com.reco.lld.demo.RecommendationService personalize  # one
+```
+
+Available scenarios: `auth`, `access`, `coldstart`, `personalize`, `similar`, `feedback`, `filter`, `rate`, `experiment`, `notify`, `concurrent`.
+
+## Problems → Solutions
+
+| # | Common mistake | Fix in this codebase |
+|---|----------------|----------------------|
+| 1 | One hardcoded popularity list | Strategy + Factory by placement / experiment / cold-start |
+| 2 | “Users like you” leaks neighbor ids | Collaborative scores only; reason code `COLLABORATIVE` |
+| 3 | Client sends `userId` as identity | Opaque session token + IDOR: actor must match target (or admin) |
+| 4 | Banned items still recommended | `EligibilityFilter` after scoring |
+| 5 | Personalization outage → empty page | `FallbackDecorator` → popularity |
+
+## Core flow
+
+```
+Client ──Bearer token──► AuthService.requireUser
+       ──recommend──► RecommendationFacade
+                         ├── RateLimiter
+                         ├── AccessControl (no IDOR)
+                         ├── TtlCache
+                         ├── ProfileService (affinities, blocks)
+                         ├── RankingStrategyFactory
+                         ├── FilterChain
+                         ├── DiversityDecorator
+                         └── AsyncEventBus → NotificationService
+Client ──hide/click──► RecordInteractionCommand → InteractionService
+                         └── invalidate cache prefix(userId)
+```
+
+## Patterns used
+
+- **Strategy** — popularity, content, collaborative, similar-items  
+- **Factory Method** — `RankingStrategyFactory`  
+- **Composite** — `HybridRankingStrategy`  
+- **Decorator** — fallback + diversity  
+- **Chain of Responsibility** — post-rank filters  
+- **Builder** — `RecommendationRequest`  
+- **Facade** — `RecommendationFacade`  
+- **Observer (async)** — `AsyncEventBus`  
+- **Command** — record interaction  
+- **Template-style context** — `RankingContext` shared by rankers  
+
+## Docs
+
+- `HLD.md` — architecture, tech choices, components  
+- `README.md` — this file  
+- `CLASS_AND_DATA_MODEL.md` — classes and tables  
+- `API_REFERENCE.md` — REST-style contracts  
+- `PROBLEMS_AND_SOLUTIONS.md` — interview pitfalls  
+- `INTERVIEW_QUESTIONS.md` — follow-ups  
+
+## Notes
+
+This is an LLD teaching / interview codebase — Redis, Kafka, feature-store, and real CF (ALS / two-tower) are stubbed as in-memory maps and co-occurrence counts.
