@@ -99,6 +99,7 @@ Client ──hide/click──► RecordInteractionCommand → InteractionService
 
 - `HLD.md` — architecture, tech choices, components  
 - `README.md` — this file  
+- `DESIGN_THOUGHT_PROCESS.md` — **why this design**, patterns, edge cases  
 - `CLASS_AND_DATA_MODEL.md` — classes and tables  
 - `API_REFERENCE.md` — REST-style contracts  
 - `PROBLEMS_AND_SOLUTIONS.md` — interview pitfalls  
