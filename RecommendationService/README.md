@@ -5,14 +5,16 @@ Low-level design of a **personalized product recommendation service** that addre
 ## Features Required
 
 - **Placements:** `HOME`, `PRODUCT_DETAIL` (similar items), `CART`, `EMAIL`.
-- **Cold start:** guests and new members get **popularity**, never an empty slate.
-- **Personalization:** content-based (category/tags) + item–item collaborative (purchase co-occurrence).
+- **Cold start:** guests and new members with **no tags and no history** get popularity.
+- **User Service tags:** members select catalog tags; `SelectedTagStrategy` ranks matching items even with zero clicks.
+- **Personalization:** content-based (inferred) + selected tags (explicit) + item–item collaborative.
 - **Hybrid ranking:** weighted ensemble; experiment **CONTROL** stays on safer popularity/content.
 - **Feedback loop:** view / click / like / purchase / dislike / hide (Command).
 - **Eligibility:** banned and out-of-stock SKUs are hard-filtered; purchases excluded on HOME.
 - **Diversity:** cap items per category so one affinity does not dominate.
-- **Explainability:** generic reason codes (`POPULAR`, `CONTENT`, `COLLABORATIVE`, `SIMILAR`, `HYBRID`) — **never** “because user X bought this”.
-- **Caching:** TTL cache of slates; busted on new feedback.
+- **Explainability:** generic reason codes (`POPULAR`, `CONTENT`, `COLLABORATIVE`, `SIMILAR`, `TAG`, `HYBRID`).
+- **Caching:** TTL + **single-flight**; cache keys include user/catalog **generations**.
+- **Concurrency:** striped per-user locks on tag/interaction writes; catalog snapshots while ranking.
 - **Notifications:** async event bus on slate generation and feedback.
 - **Security:** salted passwords, session tokens, IDOR checks, rate limits, input bounds, no PII in responses.
 
@@ -23,7 +25,9 @@ com.reco.lld
 ├── account/     User, AuthService, Session, AccessControl, PasswordUtils
 ├── catalog/     Item, Catalog, Category, ItemStatus
 ├── profile/     Interaction*, UserProfile, ProfileService
-├── ranking/     RankingStrategy*, Factory, Hybrid, Fallback/Diversity decorators
+├── userservice/ UserPreferenceService, TagVocabulary
+├── concurrency/ UserScopedLock, GenerationClock
+├── ranking/     RankingStrategy*, SelectedTagStrategy, Factory, Hybrid, Decorators
 ├── pipeline/    FilterChain (eligibility, seed, blocked, purchased)
 ├── request/     RecommendationRequest (Builder), Response, Placement
 ├── security/    RateLimiter, InputValidator
@@ -45,7 +49,7 @@ java -cp out com.reco.lld.demo.RecommendationService list         # names
 java -cp out com.reco.lld.demo.RecommendationService personalize  # one
 ```
 
-Available scenarios: `auth`, `access`, `coldstart`, `personalize`, `similar`, `feedback`, `filter`, `rate`, `experiment`, `notify`, `concurrent`.
+Available scenarios: `auth`, `access`, `coldstart`, `tags`, `personalize`, `similar`, `feedback`, `filter`, `rate`, `experiment`, `notify`, `concurrent`.
 
 ## Problems → Solutions
 
@@ -56,6 +60,8 @@ Available scenarios: `auth`, `access`, `coldstart`, `personalize`, `similar`, `f
 | 3 | Client sends `userId` as identity | Opaque session token + IDOR: actor must match target (or admin) |
 | 4 | Banned items still recommended | `EligibilityFilter` after scoring |
 | 5 | Personalization outage → empty page | `FallbackDecorator` → popularity |
+| 6 | Selected tags ignored / cold-start popularity | `UserPreferenceService` + `SelectedTagStrategy` |
+| 7 | Stale cache after concurrent hide/tag | GenerationClock in cache key + single-flight |
 
 ## Core flow
 
@@ -65,18 +71,20 @@ Client ──Bearer token──► AuthService.requireUser
                          ├── RateLimiter
                          ├── AccessControl (no IDOR)
                          ├── TtlCache
-                         ├── ProfileService (affinities, blocks)
-                         ├── RankingStrategyFactory
+                         ├── ProfileService (selected tags + affinities)
+                         ├── RankingStrategyFactory (incl. SelectedTagStrategy)
                          ├── FilterChain
                          ├── DiversityDecorator
                          └── AsyncEventBus → NotificationService
+Client ──set tags──► UserPreferenceService (vocabulary check)
+                         └── bump generation + invalidate cache
 Client ──hide/click──► RecordInteractionCommand → InteractionService
-                         └── invalidate cache prefix(userId)
+                         └── striped lock + bump generation + invalidate
 ```
 
 ## Patterns used
 
-- **Strategy** — popularity, content, collaborative, similar-items  
+- **Strategy** — popularity, content, collaborative, similar-items, **selected tags**  
 - **Factory Method** — `RankingStrategyFactory`  
 - **Composite** — `HybridRankingStrategy`  
 - **Decorator** — fallback + diversity  

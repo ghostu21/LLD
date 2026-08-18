@@ -15,6 +15,7 @@ REST-style contracts above this LLD. **Auth:** `Authorization: Bearer <token>` u
 | Homepage / email slate | `POST /recommendations` |
 | Similar items | `POST /recommendations` with `placement=PRODUCT_DETAIL` |
 | Feedback | `POST /interactions` |
+| Selected tags (User Service) | `PUT /me/tags` |
 | Admin ban | `PATCH /items/{id}/status` |
 | Debug another user | admin-only `targetUserId` |
 
@@ -74,6 +75,18 @@ REST-style contracts above this LLD. **Auth:** `Authorization: Bearer <token>` u
 | 429 | rate limit |
 
 **Useful:** reason codes are generic. Do not add `neighborUserIds`.
+
+---
+
+## PUT `/me/tags`
+
+**What:** Replace the session user's selected tags (User Service). These drive `SelectedTagStrategy` even with no clicks.
+
+```json
+{ "tags": ["software", "architecture"] }
+```
+
+Tags are lowercased and **must exist on some catalog item**. Guests → 403. Unknown tag → 400. Bumps user generation and busts that user's slate cache.
 
 ---
 

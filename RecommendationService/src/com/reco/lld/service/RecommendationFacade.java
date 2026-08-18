@@ -5,6 +5,7 @@ import com.reco.lld.account.User;
 import com.reco.lld.cache.TtlCache;
 import com.reco.lld.catalog.Catalog;
 import com.reco.lld.catalog.Item;
+import com.reco.lld.concurrency.GenerationClock;
 import com.reco.lld.events.AsyncEventBus;
 import com.reco.lld.events.RecoEvent;
 import com.reco.lld.events.RecoEventType;
@@ -30,13 +31,8 @@ import java.util.UUID;
 /**
  * Facade for the recommend API.
  * <p>
- * Why: callers should not wire rate limit → authz → cache → factory →
- * filters → diversity themselves. This is the single entry that enforces
- * security before any ranking work.
- * <p>
- * Logic: rate-limit actor → IDOR check (actor vs target) → cache →
- * build profile → factory strategy → filter chain → diversity → truncate
- * → cache → async impression event.
+ * Logic: rate-limit → IDOR check → single-flight cache (key includes
+ * user + catalog generations) → profile (tags + history) → rank → filter.
  */
 public class RecommendationFacade {
     private final Catalog catalog;
@@ -48,12 +44,13 @@ public class RecommendationFacade {
     private final RateLimiter rateLimiter;
     private final TtlCache<RecommendationResponse> cache;
     private final AsyncEventBus eventBus;
+    private final GenerationClock generations;
 
     public RecommendationFacade(Catalog catalog, ProfileService profiles,
                                 InteractionService interactions, RankingStrategyFactory factory,
                                 FilterChain filters, ExperimentAssigner experiments,
                                 RateLimiter rateLimiter, TtlCache<RecommendationResponse> cache,
-                                AsyncEventBus eventBus) {
+                                AsyncEventBus eventBus, GenerationClock generations) {
         this.catalog = catalog;
         this.profiles = profiles;
         this.interactions = interactions;
@@ -63,6 +60,7 @@ public class RecommendationFacade {
         this.rateLimiter = rateLimiter;
         this.cache = cache;
         this.eventBus = eventBus;
+        this.generations = generations;
     }
 
     public TtlCache<RecommendationResponse> getCache() {
@@ -75,12 +73,15 @@ public class RecommendationFacade {
         AccessControl.requireRecommendationsFor(actor, request.getTargetUserId());
 
         String cacheKey = cacheKey(request);
-        RecommendationResponse cached = cache.get(cacheKey);
-        if (cached != null) {
-            return new RecommendationResponse(cached.getRequestId(), cached.getItems(),
-                    cached.getStrategyName(), cached.getBucket(), true);
+        RecommendationResponse hit = cache.get(cacheKey);
+        if (hit != null) {
+            return new RecommendationResponse(hit.getRequestId(), hit.getItems(),
+                    hit.getStrategyName(), hit.getBucket(), true);
         }
+        return cache.getOrCompute(cacheKey, () -> compute(request));
+    }
 
+    private RecommendationResponse compute(RecommendationRequest request) {
         UserProfile profile = profiles.build(request.getTargetUserId());
         ExperimentBucket bucket = experiments.assign(request.getTargetUserId());
         Item seed = request.getSeedItemId() == null ? null : catalog.require(request.getSeedItemId());
@@ -102,14 +103,16 @@ public class RecommendationFacade {
 
         RecommendationResponse response = new RecommendationResponse(
                 UUID.randomUUID().toString(), items, strategy.name(), bucket, false);
-        cache.put(cacheKey, response);
         eventBus.publish(new RecoEvent(RecoEventType.RECS_GENERATED, request.getTargetUserId(),
-                null, "size=" + items.size() + " strategy=" + strategy.name()));
+                null, "size=" + items.size() + " strategy=" + strategy.name()
+                + " tags=" + profile.getSelectedTags()));
         return response;
     }
 
-    private static String cacheKey(RecommendationRequest request) {
+    private String cacheKey(RecommendationRequest request) {
         return request.getTargetUserId() + "|" + request.getPlacement() + "|"
-                + request.getSeedItemId() + "|" + request.getLimit();
+                + request.getSeedItemId() + "|" + request.getLimit()
+                + "|u" + generations.user(request.getTargetUserId())
+                + "|c" + generations.catalog();
     }
 }

@@ -10,6 +10,8 @@ import com.reco.lld.catalog.Catalog;
 import com.reco.lld.catalog.Category;
 import com.reco.lld.catalog.Item;
 import com.reco.lld.catalog.ItemStatus;
+import com.reco.lld.concurrency.GenerationClock;
+import com.reco.lld.concurrency.UserScopedLock;
 import com.reco.lld.events.AsyncEventBus;
 import com.reco.lld.events.NotificationService;
 import com.reco.lld.events.RecoEventType;
@@ -24,6 +26,7 @@ import com.reco.lld.security.RateLimiter;
 import com.reco.lld.service.CatalogAdmin;
 import com.reco.lld.service.InteractionService;
 import com.reco.lld.service.RecommendationFacade;
+import com.reco.lld.userservice.UserPreferenceService;
 
 import java.time.Duration;
 import java.util.Set;
@@ -36,6 +39,7 @@ public final class DemoFixtures {
     public final User alice;
     public final User bob;
     public final User charlie;
+    public final User dana;
     public final User admin;
     public final User guest;
     public final Session aliceSession;
@@ -56,9 +60,11 @@ public final class DemoFixtures {
     public final Catalog catalog;
     public final RecommendationFacade reco;
     public final InteractionService interactions;
+    public final UserPreferenceService preferences;
     public final CatalogAdmin catalogAdmin;
     public final AsyncEventBus eventBus;
     public final RateLimiter rateLimiter;
+    public final ProfileService profiles;
 
     public DemoFixtures() throws Exception {
         UserStore users = new UserStore();
@@ -66,6 +72,7 @@ public final class DemoFixtures {
         alice = auth.register("alice", "secret123", UserRole.MEMBER, "alice@example.com");
         bob = auth.register("bob", "secret123", UserRole.MEMBER, "bob@example.com");
         charlie = auth.register("charlie", "secret123", UserRole.MEMBER, "charlie@example.com");
+        dana = auth.register("dana", "secret123", UserRole.MEMBER, "dana@example.com");
         admin = auth.register("admin", "secret123", UserRole.ADMIN, "admin@example.com");
         aliceSession = auth.login("alice", "secret123");
         adminSession = auth.login("admin", "secret123");
@@ -93,20 +100,25 @@ public final class DemoFixtures {
         }
 
         TtlCache<RecommendationResponse> cache = new TtlCache<>(Duration.ofSeconds(60));
+        UserScopedLock locks = new UserScopedLock();
+        GenerationClock generations = new GenerationClock();
         InteractionStore store = new InteractionStore();
-        interactions = new InteractionService(catalog, store, cache, eventBus);
-        rateLimiter = new RateLimiter(80, 10_000);
+        preferences = new UserPreferenceService(catalog, locks, generations, cache);
+        interactions = new InteractionService(catalog, store, cache, eventBus, locks, generations);
+        rateLimiter = new RateLimiter(200, 10_000);
+        profiles = new ProfileService(store, catalog, preferences);
         reco = new RecommendationFacade(
                 catalog,
-                new ProfileService(store, catalog),
+                profiles,
                 interactions,
                 new RankingStrategyFactory(),
                 FilterChain.defaultChain(),
                 new ExperimentAssigner(),
                 rateLimiter,
                 cache,
-                eventBus);
-        catalogAdmin = new CatalogAdmin(catalog, cache);
+                eventBus,
+                generations);
+        catalogAdmin = new CatalogAdmin(catalog, cache, generations);
 
         seedHistory();
     }
@@ -117,11 +129,6 @@ public final class DemoFixtures {
         return item;
     }
 
-    /**
-     * Alice and Charlie share electronics purchases so collaborative filtering
-     * can surface headphones to Alice. Bob is a books reader (content-based).
-     * Popularity is boosted by extra views on Clean Code.
-     */
     private void seedHistory() {
         interactions.seed(alice.getUserId(), phone.getItemId(), InteractionType.PURCHASE);
         interactions.seed(alice.getUserId(), charger.getItemId(), InteractionType.CLICK);

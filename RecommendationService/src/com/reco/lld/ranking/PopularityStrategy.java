@@ -31,7 +31,7 @@ public class PopularityStrategy implements RankingStrategy {
             scores.merge(interaction.getItemId(), (double) interaction.getType().getWeight(), Double::sum);
         }
         List<ScoredItem> out = new ArrayList<>();
-        for (Item item : context.getCatalog().all()) {
+        for (Item item : context.getCatalog().snapshot()) {
             double s = scores.getOrDefault(item.getItemId(), 0.0);
             out.add(new ScoredItem(item.getItemId(), s, "POPULAR"));
         }

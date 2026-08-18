@@ -5,6 +5,7 @@ import com.reco.lld.account.User;
 import com.reco.lld.cache.TtlCache;
 import com.reco.lld.catalog.Catalog;
 import com.reco.lld.catalog.ItemStatus;
+import com.reco.lld.concurrency.GenerationClock;
 
 /**
  * Admin-only catalog eligibility changes (ban / out-of-stock).
@@ -12,15 +13,18 @@ import com.reco.lld.catalog.ItemStatus;
 public class CatalogAdmin {
     private final Catalog catalog;
     private final TtlCache<?> cache;
+    private final GenerationClock generations;
 
-    public CatalogAdmin(Catalog catalog, TtlCache<?> cache) {
+    public CatalogAdmin(Catalog catalog, TtlCache<?> cache, GenerationClock generations) {
         this.catalog = catalog;
         this.cache = cache;
+        this.generations = generations;
     }
 
     public void setStatus(User actor, String itemId, ItemStatus status) {
         AccessControl.requireModerate(actor);
         catalog.require(itemId).setStatus(status);
-        cache.invalidatePrefix("");
+        generations.bumpCatalog();
+        cache.clear();
     }
 }

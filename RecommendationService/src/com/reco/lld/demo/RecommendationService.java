@@ -19,6 +19,7 @@ public class RecommendationService {
         SCENARIOS.put("auth", new AuthScenario());
         SCENARIOS.put("access", new AccessScenario());
         SCENARIOS.put("coldstart", new ColdStartScenario());
+        SCENARIOS.put("tags", new TagsScenario());
         SCENARIOS.put("personalize", new PersonalizeScenario());
         SCENARIOS.put("similar", new SimilarScenario());
         SCENARIOS.put("feedback", new FeedbackScenario());

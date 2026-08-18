@@ -52,9 +52,19 @@ public final class AccessControl {
         }
     }
 
+    public static boolean canManagePreferences(User actor) {
+        return canGetPersonalized(actor);
+    }
+
     public static void requireRecordInteraction(User actor) {
         if (!canRecordInteraction(actor)) {
             throw new AccessDeniedException("Only active members may record feedback");
+        }
+    }
+
+    public static void requireManagePreferences(User actor) {
+        if (!canManagePreferences(actor)) {
+            throw new AccessDeniedException("Only active members may update selected tags");
         }
     }
 

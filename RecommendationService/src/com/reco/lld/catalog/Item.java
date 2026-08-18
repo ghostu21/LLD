@@ -26,7 +26,16 @@ public class Item {
         this.itemId = UUID.randomUUID().toString();
         this.title = title;
         this.category = category;
-        this.tags = Collections.unmodifiableSet(new LinkedHashSet<>(tags == null ? Set.of() : tags));
+        Set<String> normalized = new LinkedHashSet<>();
+        if (tags != null) {
+            for (String raw : tags) {
+                String tag = TagNormalizer.normalize(raw);
+                if (tag != null && TagNormalizer.isLegalShape(tag)) {
+                    normalized.add(tag);
+                }
+            }
+        }
+        this.tags = Collections.unmodifiableSet(normalized);
         this.price = price;
         this.status = ItemStatus.ACTIVE;
     }

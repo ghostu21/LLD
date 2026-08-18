@@ -32,6 +32,11 @@ public class Catalog {
         return items.values();
     }
 
+    /** Snapshot of catalog values so rankers do not iterate a live CHM view. */
+    public List<Item> snapshot() {
+        return List.copyOf(items.values());
+    }
+
     public List<Item> activeCandidates() {
         List<Item> out = new ArrayList<>();
         for (Item item : items.values()) {

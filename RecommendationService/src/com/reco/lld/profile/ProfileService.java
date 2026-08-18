@@ -3,6 +3,7 @@ package com.reco.lld.profile;
 import com.reco.lld.catalog.Catalog;
 import com.reco.lld.catalog.Category;
 import com.reco.lld.catalog.Item;
+import com.reco.lld.userservice.UserPreferenceService;
 
 import java.util.EnumMap;
 import java.util.HashMap;
@@ -11,18 +12,18 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Builds a {@link UserProfile} from the interaction log + catalog.
- * <p>
- * Why: keeps aggregation in one place so every strategy sees the same
- * affinities and block lists (no ranker re-implements hide/purchase rules).
+ * Builds a {@link UserProfile} from interactions + User Service selected tags.
  */
 public class ProfileService {
     private final InteractionStore interactions;
     private final Catalog catalog;
+    private final UserPreferenceService preferences;
 
-    public ProfileService(InteractionStore interactions, Catalog catalog) {
+    public ProfileService(InteractionStore interactions, Catalog catalog,
+                          UserPreferenceService preferences) {
         this.interactions = interactions;
         this.catalog = catalog;
+        this.preferences = preferences;
     }
 
     public UserProfile build(String userId) {
@@ -52,6 +53,7 @@ public class ProfileService {
                 }
             }
         }
-        return new UserProfile(userId, categories, tags, purchased, blocked, positive);
+        Set<String> selected = preferences.selectedTags(userId);
+        return new UserProfile(userId, categories, tags, selected, purchased, blocked, positive);
     }
 }

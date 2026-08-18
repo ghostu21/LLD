@@ -34,7 +34,7 @@ public class CollaborativeStrategy implements RankingStrategy {
         Map<String, Map<String, Integer>> co = buildCooccurrence(context);
         Set<String> mine = context.getProfile().getPurchasedItemIds();
         List<ScoredItem> out = new ArrayList<>();
-        for (Item item : context.getCatalog().all()) {
+        for (Item item : context.getCatalog().snapshot()) {
             double score = 0;
             Map<String, Integer> neighbors = co.getOrDefault(item.getItemId(), Map.of());
             for (String purchased : mine) {

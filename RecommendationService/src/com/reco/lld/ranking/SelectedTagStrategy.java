@@ -8,16 +8,16 @@ import java.util.Comparator;
 import java.util.List;
 
 /**
- * Content-based: score = category affinity + overlapping tags.
+ * Scores catalog items by overlap with User Service selected tags.
  * <p>
- * Why: works with a single user's history (no need for neighbors) and
- * never consults another user's identity.
+ * Why: explicit onboarding tags are stronger intent than inferred
+ * click affinity and must work with zero interaction history.
  */
-public class ContentBasedStrategy implements RankingStrategy {
+public class SelectedTagStrategy implements RankingStrategy {
 
     @Override
     public String name() {
-        return "content";
+        return "selected-tags";
     }
 
     @Override
@@ -25,12 +25,11 @@ public class ContentBasedStrategy implements RankingStrategy {
         UserProfile profile = context.getProfile();
         List<ScoredItem> out = new ArrayList<>();
         for (Item item : context.getCatalog().snapshot()) {
-            double cat = profile.getCategoryAffinity().getOrDefault(item.getCategory(), 0.0);
-            double tag = 0;
-            for (String t : item.getTags()) {
-                tag += profile.getTagAffinity().getOrDefault(t, 0.0);
+            int overlap = 0;
+            for (String tag : item.getTags()) {
+                if (profile.getSelectedTags().contains(tag)) overlap++;
             }
-            out.add(new ScoredItem(item.getItemId(), cat + tag, "CONTENT"));
+            out.add(new ScoredItem(item.getItemId(), overlap * 5.0, "TAG"));
         }
         out.sort(Comparator.comparingDouble(ScoredItem::getScore).reversed());
         return out;

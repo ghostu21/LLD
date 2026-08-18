@@ -45,7 +45,7 @@ public class SimilarItemsStrategy implements RankingStrategy {
         }
 
         List<ScoredItem> out = new ArrayList<>();
-        for (Item item : context.getCatalog().all()) {
+        for (Item item : context.getCatalog().snapshot()) {
             if (item.getItemId().equals(seed.getItemId())) continue;
             double content = 0;
             if (item.getCategory() == seed.getCategory()) content += 3;
