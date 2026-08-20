@@ -8,6 +8,7 @@ public interface WeatherObservable {
 
     void removeObserver(WeatherObserver observer);
 
+    /// uses Push Mechanism for Data
     void notifyObservers();
 
     void setWeatherReadings(float temperature, float humidity, float pressure);
