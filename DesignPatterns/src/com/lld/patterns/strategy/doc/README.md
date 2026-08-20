@@ -22,6 +22,14 @@ Strategy is required when **the same action has several interchangeable implemen
 
 ## Structure
 
+**Class diagram** (from the LLD note):
+
+![Strategy class diagram](./images/class-diagram.png)
+
+**Structure** using the payment example:
+
+![Strategy structure — ShoppingCart and PaymentStrategy](./images/structure.png)
+
 | Role | In this codebase | Job |
 |------|------------------|-----|
 | **Strategy** | `DriveStrategy`, `PaymentStrategy` | Contract (`drive()`, `pay(amount)`) |

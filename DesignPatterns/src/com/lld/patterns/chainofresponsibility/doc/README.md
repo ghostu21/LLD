@@ -35,6 +35,14 @@ CoR is required when **several objects may handle a request**, the exact handler
 
 ## Structure
 
+**Class diagram** (from the LLD note):
+
+![Chain of Responsibility class diagram](./images/class-diagram.png)
+
+**Structure** using the logging example:
+
+![Chain of Responsibility structure — LoggerProcessor](./images/structure.png)
+
 | Role | Logging (this note) | ATM |
 |------|---------------------|-----|
 | **Handler** | `LogProcessor` | `DispenseHandler` |

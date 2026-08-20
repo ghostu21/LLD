@@ -30,6 +30,14 @@ Observer is required when **many objects must react to one object’s state**, a
 
 ## Structure
 
+**Class diagram** (from the LLD note):
+
+![Observer class diagram](./images/class-diagram.png)
+
+**Structure** using the weather-station example:
+
+![Observer structure — WeatherStation and displays](./images/structure.png)
+
 | Role | Weather example | Stock “Notify Me” |
 |------|-----------------|-------------------|
 | **Observable / Subject** | `WeatherObservable` | `StockAvailabilityObservable` |
