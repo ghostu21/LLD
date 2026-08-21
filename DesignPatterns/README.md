@@ -8,6 +8,7 @@ GoF catalog implemented as **one Java package per pattern**, with a README that 
 | [Observer](src/com/lld/patterns/observer/doc/README.md) | Behavioral | `com.lld.patterns.observer` | Notify subscribers of state (weather, Notify Me) |
 | [Chain of Responsibility](src/com/lld/patterns/chainofresponsibility/doc/README.md) | Behavioral | `com.lld.patterns.chainofresponsibility` | Pass a request along handlers (logging, ATM) |
 | [Command](src/com/lld/patterns/command/doc/README.md) | Behavioral | `com.lld.patterns.command` | Request as object + undo (AC remote) |
+| [Template Method](src/com/lld/patterns/templatemethod/doc/README.md) | Behavioral | `com.lld.patterns.templatemethod` | Algorithm skeleton; subclasses fill steps (payments) |
 
 ## Run
 
@@ -18,4 +19,5 @@ java -cp out com.lld.patterns.strategy.demo.StrategyPatternDemo
 java -cp out com.lld.patterns.observer.demo.ObserverPatternDemo
 java -cp out com.lld.patterns.chainofresponsibility.demo.ChainOfResponsibilityDemo
 java -cp out com.lld.patterns.command.demo.CommandPatternDemo
+java -cp out com.lld.patterns.templatemethod.demo.TemplateMethodDemo
 ```
