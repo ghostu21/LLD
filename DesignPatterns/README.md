@@ -13,6 +13,7 @@ GoF catalog implemented as **one Java package per pattern**, with a README that 
 | [Decorator](src/com/lld/patterns/decorator/doc/README.md) | Structural | `com.lld.patterns.decorator` | Wrap to add behavior (pizza toppings) |
 | [Facade](src/com/lld/patterns/facade/doc/README.md) | Structural | `com.lld.patterns.facade` | Simple API over subsystems (place order) |
 | [Proxy](src/com/lld/patterns/proxy/doc/README.md) | Structural | `com.lld.patterns.proxy` | Stand-in that controls access (employee DAO) |
+| [Adapter](src/com/lld/patterns/adapter/doc/README.md) | Structural | `com.lld.patterns.adapter` | Incompatible APIs (pounds → kg scale) |
 
 ## Run
 
@@ -28,4 +29,5 @@ java -cp out com.lld.patterns.state.demo.StatePatternDemo
 java -cp out com.lld.patterns.decorator.demo.DecoratorPatternDemo
 java -cp out com.lld.patterns.facade.demo.FacadePatternDemo
 java -cp out com.lld.patterns.proxy.demo.ProxyPatternDemo
+java -cp out com.lld.patterns.adapter.demo.AdapterPatternDemo
 ```
