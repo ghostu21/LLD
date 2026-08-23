@@ -12,6 +12,7 @@ GoF catalog implemented as **one Java package per pattern**, with a README that 
 | [State](src/com/lld/patterns/state/doc/README.md) | Behavioral | `com.lld.patterns.state` | Behavior follows mode (traffic light, vending machine) |
 | [Decorator](src/com/lld/patterns/decorator/doc/README.md) | Structural | `com.lld.patterns.decorator` | Wrap to add behavior (pizza toppings) |
 | [Facade](src/com/lld/patterns/facade/doc/README.md) | Structural | `com.lld.patterns.facade` | Simple API over subsystems (place order) |
+| [Proxy](src/com/lld/patterns/proxy/doc/README.md) | Structural | `com.lld.patterns.proxy` | Stand-in that controls access (employee DAO) |
 
 ## Run
 
@@ -26,4 +27,5 @@ java -cp out com.lld.patterns.templatemethod.demo.TemplateMethodDemo
 java -cp out com.lld.patterns.state.demo.StatePatternDemo
 java -cp out com.lld.patterns.decorator.demo.DecoratorPatternDemo
 java -cp out com.lld.patterns.facade.demo.FacadePatternDemo
+java -cp out com.lld.patterns.proxy.demo.ProxyPatternDemo
 ```
