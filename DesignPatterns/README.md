@@ -17,6 +17,7 @@ GoF catalog implemented as **one Java package per pattern**, with a README that 
 | [Composite](src/com/lld/patterns/composite/doc/README.md) | Structural | `com.lld.patterns.composite` | Tree of parts (files, `2*(1+7)`) |
 | [Bridge](src/com/lld/patterns/bridge/doc/README.md) | Structural | `com.lld.patterns.bridge` | Two hierarchies (living thing × breathing) |
 | [Mediator](src/com/lld/patterns/mediator/doc/README.md) | Behavioral | `com.lld.patterns.mediator` | Hub for colleagues (auction house) |
+| [Null Object](src/com/lld/patterns/nullobject/doc/README.md) | Behavioral | `com.lld.patterns.nullobject` | Do-nothing stand-in instead of `null` (vehicle factory) |
 
 ## Run
 
@@ -36,4 +37,5 @@ java -cp out com.lld.patterns.adapter.demo.AdapterPatternDemo
 java -cp out com.lld.patterns.composite.demo.CompositePatternDemo
 java -cp out com.lld.patterns.bridge.demo.BridgePatternDemo
 java -cp out com.lld.patterns.mediator.demo.MediatorPatternDemo
+java -cp out com.lld.patterns.nullobject.demo.NullObjectPatternDemo
 ```
