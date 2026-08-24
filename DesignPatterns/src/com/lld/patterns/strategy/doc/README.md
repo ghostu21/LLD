@@ -121,7 +121,7 @@ Both use **composition** and look like “Context has a Strategy/Implementor.”
 | **Typical smell it fixes** | Giant `switch` / duplicated overrides of **one** method | Cartesian explosion: `CircleVector`, `CircleRaster`, `SquareVector`, `SquareRaster` |
 | **Who chooses** | Client / factory chooses the algorithm; often **runtime** (user picked UPI) | You split design so abstraction and implementor can both grow; binding is often **structural**, not “user picked algorithm” |
 | **UML** | Context → Strategy; many ConcreteStrategies | Abstraction → Implementor; RefinedAbstractions × ConcreteImplementors |
-| **This repo** | `ShoppingCart` → `PaymentStrategy` | Not implemented here. Example: `View` (list vs grid) **bridged** to `Theme` (dark vs light) so you do not create ListDark, ListLight, GridDark, GridLight |
+| **This repo** | `ShoppingCart` → `PaymentStrategy` | `LivingThings` → `BreathingProcess` (dog/whale share lungs; fish uses gills) |
 | **Same class count?** | One context, many algos | Two trees; Bridge is the **link** between them |
 
 **One-liner:** Strategy = **interchangeable algorithms**. Bridge = **decouple abstraction from implementation** so both can extend without a subclass matrix.
