@@ -19,6 +19,7 @@ GoF catalog implemented as **one Java package per pattern**, with a README that 
 | [Mediator](src/com/lld/patterns/mediator/doc/README.md) | Behavioral | `com.lld.patterns.mediator` | Hub for colleagues (auction house) |
 | [Null Object](src/com/lld/patterns/nullobject/doc/README.md) | Behavioral | `com.lld.patterns.nullobject` | Do-nothing stand-in instead of `null` (vehicle factory) |
 | [Singleton](src/com/lld/patterns/singleton/doc/README.md) | Creational | `com.lld.patterns.singleton` | One instance (DB connection; DCL + volatile) |
+| [Factory Method](src/com/lld/patterns/factory/doc/README.md) | Creational | `com.lld.patterns.factory` | Encapsulate `new` (shapes; vs Simple Factory) |
 
 ## Run
 
@@ -40,4 +41,5 @@ java -cp out com.lld.patterns.bridge.demo.BridgePatternDemo
 java -cp out com.lld.patterns.mediator.demo.MediatorPatternDemo
 java -cp out com.lld.patterns.nullobject.demo.NullObjectPatternDemo
 java -cp out com.lld.patterns.singleton.demo.SingletonPatternDemo
+java -cp out com.lld.patterns.factory.demo.FactoryPatternDemo
 ```
