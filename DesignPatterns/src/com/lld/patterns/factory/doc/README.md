@@ -111,7 +111,7 @@ Honest caveat: the note’s `FactoryMethodDemo` still `switch`es on `ShapeType` 
 |--|--------------------|--------------------|----------------------|---------------------|
 | **Creates** | One product type per subclass | One product from a `switch` | A **family** (button + checkbox) | Not about products; algorithm steps |
 | **How** | Override `createShape()` | Static `if`/`switch` | Factory of factories | Inheritance of steps |
-| **This repo** | `SquareCreator` | `simple.ShapeFactory` | Not yet | `PaymentFlow.sendMoney` |
+| **This repo** | `SquareCreator` | `simple.ShapeFactory` | `CarFactory` (interior + exterior) | `PaymentFlow.sendMoney` |
 
 Factory Method **is** a Template Method whose varying step is “create the object” (see Template README Q8).
 
