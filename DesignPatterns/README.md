@@ -21,6 +21,7 @@ GoF catalog implemented as **one Java package per pattern**, with a README that 
 | [Singleton](src/com/lld/patterns/singleton/doc/README.md) | Creational | `com.lld.patterns.singleton` | One instance (DB connection; DCL + volatile) |
 | [Factory Method](src/com/lld/patterns/factory/doc/README.md) | Creational | `com.lld.patterns.factory` | Encapsulate `new` (shapes; vs Simple Factory) |
 | [Abstract Factory](src/com/lld/patterns/abstractfactory/doc/README.md) | Creational | `com.lld.patterns.abstractfactory` | Families of products (economy vs luxury car) |
+| [Prototype](src/com/lld/patterns/prototype/doc/README.md) | Creational | `com.lld.patterns.prototype` | Clone instead of `new` (student / robots) |
 
 ## Run
 
@@ -44,4 +45,5 @@ java -cp out com.lld.patterns.nullobject.demo.NullObjectPatternDemo
 java -cp out com.lld.patterns.singleton.demo.SingletonPatternDemo
 java -cp out com.lld.patterns.factory.demo.FactoryPatternDemo
 java -cp out com.lld.patterns.abstractfactory.demo.AbstractFactoryPatternDemo
+java -cp out com.lld.patterns.prototype.demo.PrototypePatternDemo
 ```
