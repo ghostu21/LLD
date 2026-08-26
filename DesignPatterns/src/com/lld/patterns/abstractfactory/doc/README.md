@@ -118,7 +118,7 @@ One-liner from the note: **one product, many variants → Factory Method. Many p
 |--|----------------------|--------------------|--------------------|-------------|
 | **Creates** | A **set** of related objects | One object | One object from a `switch` | One complex object step by step |
 | **Consistency** | Family stays together | N/A | N/A | Same object, many steps |
-| **This repo** | Cars | Shapes | `simple.ShapeFactory` | Not yet |
+| **This repo** | Cars | Shapes | `simple.ShapeFactory` | Student registration |
 
 ## Run
 

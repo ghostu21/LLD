@@ -23,6 +23,7 @@ GoF catalog implemented as **one Java package per pattern**, with a README that 
 | [Abstract Factory](src/com/lld/patterns/abstractfactory/doc/README.md) | Creational | `com.lld.patterns.abstractfactory` | Families of products (economy vs luxury car) |
 | [Prototype](src/com/lld/patterns/prototype/doc/README.md) | Creational | `com.lld.patterns.prototype` | Clone instead of `new` (student / robots) |
 | [Object Pool](src/com/lld/patterns/objectpool/doc/README.md) | Creational | `com.lld.patterns.objectpool` | Reuse expensive instances (DB connections) |
+| [Builder](src/com/lld/patterns/builder/doc/README.md) | Creational | `com.lld.patterns.builder` | Step-by-step construction (student registration) |
 
 ## Run
 
@@ -48,4 +49,5 @@ java -cp out com.lld.patterns.factory.demo.FactoryPatternDemo
 java -cp out com.lld.patterns.abstractfactory.demo.AbstractFactoryPatternDemo
 java -cp out com.lld.patterns.prototype.demo.PrototypePatternDemo
 java -cp out com.lld.patterns.objectpool.demo.ObjectPoolPatternDemo
+java -cp out com.lld.patterns.builder.demo.BuilderPatternDemo
 ```
