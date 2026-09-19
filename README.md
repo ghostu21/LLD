@@ -14,6 +14,7 @@ This project contains Low-Level Design (LLD) implementations of certain systems.
 | 6 | Design Patterns — GoF catalog + demos | `DesignPatterns/` | — | [`README.md`](./DesignPatterns/README.md) |
 | 7 | Recommendation Service — ranking / privacy | `RecommendationService/` | [`HLD.md`](./RecommendationService/HLD.md) | [`README.md`](./RecommendationService/README.md) |
 | 8 | Chess Game — multiplayer engine | `ChessGame/` | [`HLD.md`](./ChessGame/HLD.md) | [`README.md`](./ChessGame/README.md) |
+| 9 | Google Drive — files / share / versions | `GoogleDrive/` | [`HLD.md`](./GoogleDrive/HLD.md) | [`README.md`](./GoogleDrive/README.md) |
 
 ## What’s in each `HLD.md`
 
