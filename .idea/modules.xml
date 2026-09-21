@@ -9,6 +9,7 @@
       <module fileurl="file://$PROJECT_DIR$/GoogleDrive/GoogleDrive.iml" filepath="$PROJECT_DIR$/GoogleDrive/GoogleDrive.iml" />
       <module fileurl="file://$PROJECT_DIR$/LLD.iml" filepath="$PROJECT_DIR$/LLD.iml" />
       <module fileurl="file://$PROJECT_DIR$/RecommendationService/RecommendationService.iml" filepath="$PROJECT_DIR$/RecommendationService/RecommendationService.iml" />
+      <module fileurl="file://$PROJECT_DIR$/VendingMachine/VendingMachine.iml" filepath="$PROJECT_DIR$/VendingMachine/VendingMachine.iml" />
     </modules>
   </component>
 </project>
